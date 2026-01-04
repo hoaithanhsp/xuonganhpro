@@ -28,7 +28,6 @@ export const generateImagesWithGemini = async (
   }
 
   // 1. Chuẩn bị payload dữ liệu (Parts)
-  // Text prompt luôn ở đầu
   const parts: any[] = [{ text: prompt }];
   
   // Thêm các ảnh tham chiếu
@@ -38,38 +37,38 @@ export const generateImagesWithGemini = async (
     }
   });
 
-  // Validate input
   if (parts.length <= 1 && !prompt.trim()) {
      throw new Error("Cần nhập mô tả (prompt) hoặc tải lên ít nhất một ảnh tham chiếu.");
   }
 
   let lastError: any = null;
 
-  // 2. VÒNG LẶP FALLBACK (Thử lần lượt từng model)
+  // 2. VÒNG LẶP FALLBACK
   for (const model of MODEL_FALLBACK_LIST) {
-    console.log(`📡 Đang gọi API qua Proxy với model: ${model}`);
+    console.log(`📡 Đang gọi API trực tiếp (Client-Side) với model: ${model}`);
     
     try {
       const generationPromises: Promise<any>[] = [];
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       
       // Tạo N requests song song cho N ảnh
       for (let i = 0; i < numberOfImages; i++) {
-          // Thay vì gọi SDK, ta gọi vào API Route /api/generate của chính server mình
-          const requestPromise = fetch('/api/generate', {
+          const requestPromise = fetch(url, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'x-gemini-api-key': apiKey // Gửi key qua header custom để bảo mật hơn query param
             },
             body: JSON.stringify({
-              model: model,
-              contents: [{ parts }]
+              contents: [{ parts }],
+              generationConfig: {
+                 // Không set responseMimeType cho image generation để tránh lỗi
+              }
             })
           }).then(async (res) => {
              const data = await res.json();
              if (!res.ok) {
-               // Ném lỗi để catch ở dưới và chuyển model khác
-               throw new Error(data.error?.message || data.error || `Lỗi HTTP ${res.status}`);
+               // Bắt lỗi từ Google trả về
+               throw new Error(data.error?.message || `Lỗi HTTP ${res.status}: ${res.statusText}`);
              }
              return data;
           });
@@ -77,12 +76,11 @@ export const generateImagesWithGemini = async (
           generationPromises.push(requestPromise);
       }
 
-      // Chờ tất cả request hoàn tất
+      // Chờ tất cả request hoàn tất (Trình duyệt sẽ đợi bao lâu cũng được, không bị giới hạn 10s)
       const responses = await Promise.all(generationPromises);
 
-      // 3. Parse kết quả trả về từ cấu trúc JSON của Google
+      // 3. Parse kết quả trả về
       const imageUrls = responses.map(response => {
-          // Cấu trúc: { candidates: [ { content: { parts: [ { inlineData: ... } ] } } ] }
           const candidate = response.candidates?.[0];
           const parts = candidate?.content?.parts || [];
           
@@ -91,32 +89,32 @@ export const generateImagesWithGemini = async (
                   return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
               }
           }
-          throw new Error(`Model ${model} trả về thành công nhưng không tìm thấy dữ liệu ảnh trong response.`);
+          throw new Error(`Model ${model} trả về thành công nhưng không có dữ liệu ảnh.`);
       });
       
       const validUrls = imageUrls.filter((url): url is string => !!url);
       
       if (validUrls.length > 0) {
-        return validUrls; // Thành công! Trả về ngay danh sách ảnh.
+        return validUrls; // Thành công!
       }
 
     } catch (error: any) {
-      console.warn(`⚠️ Model ${model} gặp lỗi:`, error);
+      console.warn(`⚠️ Model ${model} thất bại:`, error);
       lastError = error;
-      // Vòng lặp sẽ tiếp tục với model tiếp theo trong danh sách
+      // Thử model tiếp theo
     }
   }
 
-  // Nếu chạy hết vòng lặp mà vẫn không có ảnh
+  // Xử lý lỗi cuối cùng
   console.error("❌ Tất cả các model đều thất bại.", lastError);
   
   let errorMessage = "Không thể tạo ảnh. Vui lòng thử lại sau.";
   if (lastError) {
       const msg = lastError.message || JSON.stringify(lastError);
       if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-        errorMessage = "Lỗi 429: Key của bạn đã hết lượt dùng (Quota Exceeded). Vui lòng đổi Key khác.";
-      } else if (msg.includes('504') || msg.includes('Timeout')) {
-        errorMessage = "Lỗi Timeout: Server xử lý quá lâu. Hãy thử giảm số lượng ảnh hoặc đổi model.";
+        errorMessage = "Lỗi 429: Key hết hạn ngạch (Quota). Vui lòng đổi Key khác.";
+      } else if (msg.includes('Failed to fetch')) {
+        errorMessage = "Lỗi Kết nối (CORS/Network): Vui lòng kiểm tra lại mạng hoặc thử tắt VPN/Extension chặn quảng cáo.";
       } else {
         errorMessage = `Lỗi API: ${msg}`;
       }
