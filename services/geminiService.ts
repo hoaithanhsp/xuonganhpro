@@ -3,9 +3,8 @@ import { ImageState } from '../types';
 
 // Fallback Model List defined in priority order
 const MODEL_FALLBACK_LIST = [
-  'gemini-3-flash-preview',
-  'gemini-3-pro-preview',
-  'gemini-2.5-flash-image' // Using specific image model name for 2.5 series
+  'gemini-2.5-flash-image', // Default for image generation
+  'gemini-3-pro-image-preview' // High quality fallback
 ];
 
 const fileToGenerativePart = (base64Data: string, mimeType: string) => {
@@ -59,9 +58,9 @@ export const generateImagesWithGemini = async (
           generationPromises.push(ai.models.generateContent({
               model, // Use the current model in the loop
               contents: { parts },
-              config: {
-                  responseModalities: [Modality.IMAGE],
-              },
+              // Config for image generation models does not strictly need responseModalities: [Modality.IMAGE]
+              // as they generate images by default or based on prompt context.
+              config: {},
           }));
       }
 

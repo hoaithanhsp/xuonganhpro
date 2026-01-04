@@ -311,9 +311,8 @@ function App() {
                  <div className="mt-4">
                     <p className="text-sm font-semibold text-gray-700 mb-2">Thứ tự Model ưu tiên (Tự động chuyển khi lỗi):</p>
                     <div className="flex flex-wrap gap-2">
-                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">1. Flash Preview (Nhanh)</span>
-                       <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">2. Pro Preview (Mạnh)</span>
-                       <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded border border-gray-200">3. Flash 2.5 (Ổn định)</span>
+                       <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">1. Gemini 2.5 Flash Image</span>
+                       <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded border border-blue-200">2. Gemini 3 Pro Image</span>
                     </div>
                  </div>
               </div>
