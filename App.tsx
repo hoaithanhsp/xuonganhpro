@@ -309,9 +309,9 @@ function App() {
                 </div>
 
                 <div className="mt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">Thứ tự Model ưu tiên (Tự động chuyển khi lỗi):</p>
+                  <p className="text-sm font-semibold text-gray-700 mb-2">Model sử dụng:</p>
                   <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded border border-green-200">1. Gemini 2.0 Flash Exp</span>
+                    <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded border border-purple-200">Gemini 2.5 Flash Image</span>
                   </div>
                 </div>
               </div>
