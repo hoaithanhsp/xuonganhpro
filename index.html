@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gemini Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'brand-primary': '#15803d', // green-700
+              'brand-secondary': '#16a34a', // green-600
+              'base-100': '#ffffff',
+              'base-200': '#f0fdf4',
+              'base-300': '#dcfce7',
+              'base-content': '#1f2937',
+              // Remapping "dark" keys to Light Green Theme values
+              'dark-100': '#f0fdf4', // Main Background (Light Green 50)
+              'dark-200': '#ffffff', // Panel Background (White)
+              'dark-300': '#bbf7d0', // Borders (Green 200)
+              'dark-content': '#14532d', // Main Text (Green 900)
+            },
+          }
+        }
+      }
+    </script>
+  <script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/"
+  }
+}
+</script>
+</head>
+  <body class="bg-dark-100 text-dark-content">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>
