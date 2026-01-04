@@ -2,8 +2,7 @@ import { ImageState } from '../types';
 
 // Danh sách Model Fallback (Ưu tiên Banana/Flash Image, sau đó đến Pro)
 const MODEL_FALLBACK_LIST = [
-  'gemini-2.5-flash-image',     // Model mặc định: Nhanh & Tối ưu cho ảnh
-  'gemini-3-pro-image-preview'  // Model dự phòng: Chất lượng cao hơn
+  'gemini-2.0-flash-exp',     // Model chính thức hỗ trợ tạo ảnh (Free Tier)
 ];
 
 // Helper: Chuyển đổi dữ liệu ảnh sang format API
