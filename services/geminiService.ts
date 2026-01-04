@@ -53,17 +53,36 @@ export const generateImagesWithGemini = async (
     try {
       const generationPromises: Promise<GenerateContentResponse>[] = [];
 
+      // CHẠY TUẦN TỰ (Sequential) thay vì song song để tránh lỗi 429
       for (let i = 0; i < numberOfImages; i++) {
-        generationPromises.push(ai.models.generateContent({
-          model,
-          contents: [{ parts }],
-          config: {
-            responseModalities: [Modality.IMAGE],
-          },
-        }));
+        // Delay nhẹ 2s giữa các request (nếu tạo > 1 ảnh) để giảm tải
+        if (i > 0) await new Promise(resolve => setTimeout(resolve, 2000));
+
+        try {
+          const response = await ai.models.generateContent({
+            model,
+            contents: [{ parts }],
+            config: {
+              responseModalities: [Modality.IMAGE],
+            },
+          });
+          generationPromises.push(Promise.resolve(response));
+        } catch (err: any) {
+          console.warn(`⚠️ Request ${i + 1} failed with model ${model}`, err);
+          // Nếu lỗi là 429 thì dừng luôn vòng lặp tạo ảnh con này để chuyển sang model khác
+          if (err.message && (err.message.includes('429') || err.message.includes('RESOURCE_EXHAUSTED'))) {
+            throw err;
+          }
+          // Nếu lỗi khác (ví dụ server error tạm thời), cứ thử tiếp các ảnh sau
+        }
       }
 
       const responses = await Promise.all(generationPromises);
+
+      // Nếu không có response nào (do lỗi hết)
+      if (responses.length === 0) {
+        throw new Error("Không có ảnh nào được tạo thành công.");
+      }
 
       const imageUrls = responses.map(response => {
         const candidate = response.candidates?.[0];
@@ -75,7 +94,7 @@ export const generateImagesWithGemini = async (
             }
           }
         }
-        throw new Error(`Model ${model} trả về thành công nhưng không có ảnh.`);
+        return null;
       });
 
       const validUrls = imageUrls.filter((url): url is string => !!url);
@@ -92,7 +111,7 @@ export const generateImagesWithGemini = async (
   console.error("❌ Tất cả các model đều thất bại.", lastError);
   let errorMessage = lastError?.message || "Không thể tạo ảnh. Vui lòng thử lại sau.";
   if (errorMessage.includes('429') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
-    errorMessage = "Lỗi 429: Tất cả các model đều hết Quota hoặc không khả dụng.";
+    errorMessage = "Lỗi 429: Tài khoản API Free bị giới hạn tốc độ (Rate Limit). Hãy thử giảm số lượng ảnh tạo xuống 1 hoặc thử lại sau vài phút.";
   }
   throw new Error(errorMessage);
 };
